@@ -2,5 +2,8 @@ server:
   port: 9090
 
 mysql:
-  host: 192.168.0.1
+  host: 106.13.222.152
   port: 9001
+  dataBase: gfs
+  userName: gfs_user
+  password: gfs_psd

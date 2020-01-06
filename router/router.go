@@ -1,12 +1,29 @@
 package router
 
 import (
+	fileHandle "gfs/app/handle/file"
 	"github.com/gin-gonic/gin"
 )
 
 func Start(p *string) {
 
-	router := gin.Default()
+	router := gin.New()
+	router.Use(gin.Logger())
+	router.Use(gin.Recovery())
+	router.Use(cors())
+	//账户验证
+	accredit := router.Group("/accredit")
+	{
+		accredit.POST("/download")
+		accredit.POST("/upload")
+	}
+
+	//文件服务
+	file := router.Group("/file")
+	{
+		file.GET("/download", fileHandle.DownloadHandle)
+		file.POST("/upload", fileHandle.UploadHandle)
+	}
 
 	//系统管理
 	manager := router.Group("/manager")
@@ -27,20 +44,6 @@ func Start(p *string) {
 		file.POST("/add")
 		file.POST("/edit")
 		file.POST("/delete")
-	}
-
-	//账户验证
-	account := router.Group("/accredit")
-	{
-		account.POST("/download")
-		account.POST("/upload")
-	}
-
-	//文件服务
-	file := router.Group("/file")
-	{
-		file.GET("/download")
-		file.POST("/upload")
 	}
 
 	//vue
