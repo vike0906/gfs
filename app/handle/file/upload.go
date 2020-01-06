@@ -23,3 +23,17 @@ func UploadHandle(c *gin.Context) {
 	var response = common.Response{}
 	c.JSON(http.StatusOK, response.SuccessWithContent(fmt.Sprintf("'%s' uploaded!", file.Filename)))
 }
+
+//校验权限
+
+//获取储存根目录
+
+//获取用户目录
+
+//获取日期
+
+//文件信息写入数据库
+
+//保存文件
+
+//发起备份任务

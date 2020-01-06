@@ -15,6 +15,28 @@ type User struct {
 	Token     string `gorm:"size:32"`
 }
 
+type UserVo struct {
+	gorm.Model
+	Name      string
+	LoginName string
+	Role      uint8
+	Status    uint8
+	Token     string
+}
+
+func (u *User) GainVo() *UserVo {
+	var userVo = new(UserVo)
+	userVo.Name = u.Name
+	userVo.LoginName = u.LoginName
+	userVo.Role = u.Role
+	userVo.Status = u.Status
+	userVo.Token = u.Token
+	userVo.ID = u.ID
+	userVo.CreatedAt = u.CreatedAt
+	userVo.UpdatedAt = u.UpdatedAt
+	return userVo
+}
+
 ////query by loginName
 //func (u *User)QueryByLoginName(loginName *string) (*User, error) {
 //	var user User
