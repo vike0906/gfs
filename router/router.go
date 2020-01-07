@@ -1,7 +1,8 @@
 package router
 
 import (
-	fileHandle "gfs/app/handle/file"
+	"gfs/app/handle/download"
+	"gfs/app/handle/upload"
 	"github.com/gin-gonic/gin"
 )
 
@@ -11,35 +12,40 @@ func Start(p *string) {
 	router.Use(gin.Logger())
 	router.Use(gin.Recovery())
 	router.Use(cors())
-	//账户验证
-	accredit := router.Group("/accredit")
-	{
-		accredit.POST("/download")
-		accredit.POST("/upload")
-	}
 
 	//文件服务
-	file := router.Group("/file")
+	router.GET("/download", download.DownloadHandle)
+	uploadServer := router.Group("/upload")
 	{
-		file.GET("/download", fileHandle.DownloadHandle)
-		file.POST("/upload", fileHandle.UploadHandle)
+		uploadServer.POST("/small", upload.FileUploadHandle)
+		uploadServer.POST("/init", upload.FileUploadHandle)
+		uploadServer.POST("/chunk", upload.FileUploadHandle)
+		uploadServer.POST("/merge", upload.FileUploadHandle)
+	}
+
+	//账户授权
+	accreditServer := router.Group("/accredit")
+	{
+		accreditServer.POST("/upload")
+		accreditServer.POST("/download")
+
 	}
 
 	//系统管理
-	manager := router.Group("/manager")
+	managerServer := router.Group("/manager")
 	{
-		manager.POST("/login")
-		manager.POST("/logout")
-		manager.POST("/change-psd")
+		managerServer.POST("/login")
+		managerServer.POST("/logout")
+		managerServer.POST("/change-psd")
 
-		manager.GET("/users")
-		user := manager.Group("/user")
+		managerServer.GET("/users")
+		user := managerServer.Group("/user")
 		user.POST("/gain")
 		user.POST("/add")
 		user.POST("/edit")
 		user.POST("/delete")
 
-		file := manager.Group("file")
+		file := managerServer.Group("upload")
 		file.POST("/gain")
 		file.POST("/add")
 		file.POST("/edit")

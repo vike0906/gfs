@@ -13,6 +13,8 @@ type User struct {
 	Role      uint8  `gorm:"default:0;not null"`
 	Status    uint8  `gorm:"default:0;not null"`
 	Token     string `gorm:"size:32"`
+	AccessKey string `gorm:"size:32"`
+	SecretKey string `gorm:"size:32"`
 }
 
 type UserVo struct {

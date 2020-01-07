@@ -16,14 +16,14 @@ func (r *Response) Success() Response {
 	return Response{Code: SuccessCode, Message: SuccessMessage}
 }
 
-func (r *Response) SuccessWithMessage(message *string) Response {
-	return Response{Code: SuccessCode, Message: *message}
+func (r *Response) SuccessWithMessage(message string) Response {
+	return Response{Code: SuccessCode, Message: message}
 }
 
 func (r *Response) SuccessWithContent(content interface{}) Response {
 	return Response{Code: SuccessCode, Message: SuccessMessage, Content: content}
 }
 
-func (r *Response) Fail(message *string) Response {
-	return Response{Code: FailCode, Message: *message}
+func (r *Response) Fail(message string) Response {
+	return Response{Code: FailCode, Message: message}
 }

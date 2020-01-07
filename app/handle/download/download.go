@@ -1,4 +1,4 @@
-package file
+package download
 
 import (
 	"gfs/app/common"
