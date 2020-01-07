@@ -13,12 +13,9 @@ func PathAdaptive(path string) (string, error) {
 	}
 	var osType = runtime.GOOS
 	rootPath, _ := os.Getwd()
-	var adaptivePath string
+	var adaptivePath = rootPath + path
 	if osType == "windows" {
-		path = strings.ReplaceAll(path, "/", "\\")
-		adaptivePath = rootPath + path
-	} else if osType == "linux" {
-		adaptivePath = rootPath + path
+		adaptivePath = strings.ReplaceAll(adaptivePath, "/", "\\")
 	}
 	return adaptivePath, nil
 }

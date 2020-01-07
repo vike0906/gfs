@@ -17,10 +17,10 @@ func Start(p *string) {
 	router.GET("/download", download.DownloadHandle)
 	uploadServer := router.Group("/upload")
 	{
-		uploadServer.POST("/small", upload.FileUploadHandle)
-		uploadServer.POST("/init", upload.FileUploadHandle)
-		uploadServer.POST("/chunk", upload.FileUploadHandle)
-		uploadServer.POST("/merge", upload.FileUploadHandle)
+		uploadServer.POST("/small", upload.SmallFileUpload)
+		uploadServer.POST("/init", upload.SmallFileUpload)
+		uploadServer.POST("/chunk", upload.SmallFileUpload)
+		uploadServer.POST("/merge", upload.SmallFileUpload)
 	}
 
 	//账户授权

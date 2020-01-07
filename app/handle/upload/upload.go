@@ -3,76 +3,91 @@ package upload
 import (
 	"fmt"
 	"gfs/app/common"
-	"gfs/app/util"
 	"github.com/gin-gonic/gin"
 	"log"
 	"net/http"
 )
 
-var ulr uploader = new(uploadHelper)
-var response = common.Response{}
+const (
+	errMessage      = "need param %s, but not found"
+	fileDownloadUrl = "http://host:port/download/"
+)
 
-func FileUploadHandle(c *gin.Context) {
-	if err := paramCheck(c); err != nil {
-		c.JSON(http.StatusOK, response.Fail(err.Error()))
-	}
-	file, _ := c.FormFile("data")
-	log.Println(c.PostForm("fileName"))
-	log.Println(c.PostForm("index"))
-	log.Println(file.Filename)
-	//TODO 权限校验
-
-	path, _ := util.PathAdaptive("/resource/")
-
-	var uploader uploader = new(uploadHelper)
-	p, er := uploader.gainSavePath("userName")
-	if er != nil {
-		log.Println(er.Error())
-		c.JSON(http.StatusOK, response.Fail(er.Error()))
-		return
-	}
-	fmt.Println(*p)
-	path = path + file.Filename
-	// 上传文件至指定目录
-	err := c.SaveUploadedFile(file, path)
-	if err != nil {
-		log.Println(err.Error())
-	}
-	c.JSON(http.StatusOK, response.SuccessWithContent(fmt.Sprintf("'%s' uploaded!", file.Filename)))
-}
+var (
+	ulr      uploader = new(uploadHelper)
+	response          = common.Response{}
+)
 
 func SmallFileUpload(c *gin.Context) {
-	if err := paramCheck(c); err != nil {
+
+	if err := smallFUParamCheck(c); err != nil {
 		log.Println(err.Error())
 		c.JSON(http.StatusOK, response.Fail(err.Error()))
+		return
 	}
+
 	//TODO 权限校验
 
-	var (
-		savePath *string
-		err      error
-	)
-	if savePath, err = ulr.gainSavePath("userName"); err != nil {
+	//计算hash值并校验
+	fileData, err := c.FormFile("fileData")
+	hash, err := ulr.hash(fileData)
+	if err != nil {
 		log.Println(err.Error())
 		c.JSON(http.StatusOK, response.Fail(err.Error()))
+		return
 	}
-	fmt.Println(savePath)
+	//TODO 校验文件准确性
 
+	//获取保存目录
+	savePath, err := ulr.gainSavePath("userName")
+	if err != nil {
+		log.Println(err.Error())
+		c.JSON(http.StatusOK, response.Fail(err.Error()))
+		return
+	}
+
+	//保存文件
+	size, err := ulr.saveFile(fileData, savePath, hash)
+	if err != nil {
+		log.Println(err.Error())
+		c.JSON(http.StatusOK, response.Fail(err.Error()))
+		return
+	}
+
+	fileName := c.PostForm("fileName")
+
+	//TODO 文件信息写入数据库
+
+	c.JSON(http.StatusOK, response.SuccessWithContent(NewSmallFUResult(fileName, hash, fileDownloadUrl+hash, size)))
+
+	//TODO 发起备份任务
+	log.Println("抵达此处")
 }
 
 func BigFileUploadInit(c *gin.Context) {
 
 }
 
-func paramCheck(c *gin.Context) error {
+func smallFUParamCheck(c *gin.Context) error {
+	if err := paramCheck(c); err != nil {
+		return err
+	}
+	if fileName := c.PostForm("fileName"); fileName == "" {
+		return &common.GfsError{Message: fmt.Sprintf(errMessage, "fileName")}
+	}
+	if fileData, err := c.FormFile("fileData"); err != nil || fileData.Size == 0 {
+		return &common.GfsError{Message: fmt.Sprintf(errMessage, "fileData")}
+	}
+	return nil
+}
 
-	var errMessage = "need param %s, but not found"
+func paramCheck(c *gin.Context) error {
 
 	if uploadToken := c.PostForm("uploadToken"); uploadToken == "" {
 		return &common.GfsError{Message: fmt.Sprintf(errMessage, "uploadToken")}
 	}
-	if fileSize := c.PostForm("fileName"); fileSize == "" {
-		return &common.GfsError{Message: fmt.Sprintf(errMessage, "fileName")}
+	if fileHash := c.PostForm("fileHash"); fileHash == "" {
+		return &common.GfsError{Message: fmt.Sprintf(errMessage, "fileHash")}
 	}
 	return nil
 }
