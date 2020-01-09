@@ -8,24 +8,31 @@ import (
 	"time"
 )
 
-var bigFileHashCache = cache.New(24*time.Hour, 60*time.Minute)
+var (
+	bigFileHashCache = cache.New(24*time.Hour, 60*time.Minute)
+	chunkHashCache   = make(map[string]int64, 1000)
+)
 
-var chunkHashCache = make(map[string]int64, 1000)
-
-func putBigFileHash(bigFileHash string, bigFileChunk map[string]string) {
-	bigFileHashCache.Set(bigFileHash, bigFileChunk, cache.DefaultExpiration)
+type fileCache struct {
 }
 
-func getBigFileHash(token string) *map[string]string {
+func fileCacheInstance() *fileCache {
+	return new(fileCache)
+}
+
+func (f *fileCache) putBigFileInfo(bigFileHash string, bigFileInfo *bigFileInfo) {
+	bigFileHashCache.Set(bigFileHash, bigFileInfo, cache.DefaultExpiration)
+}
+
+func (f *fileCache) getParentFileInfo(token string) *bigFileInfo {
 	ex, found := bigFileHashCache.Get(token)
 	if found {
-		r := ex.(map[string]string)
-		return &r
+		return ex.(*bigFileInfo)
 	}
 	return nil
 }
 
-func putChunkHash(hash string, timestamp int64) {
+func (f *fileCache) putChunkHash(hash string, timestamp int64) {
 	chunkHashCache[hash] = timestamp
 }
 

@@ -16,3 +16,7 @@ func (e *GfsError) Error() string {
 	}
 	return fmt.Sprintf(e.Message)
 }
+
+func NewGfsError(message string) GfsError {
+	return GfsError{Message: message}
+}

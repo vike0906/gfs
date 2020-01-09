@@ -9,10 +9,13 @@ import (
 
 func PathAdaptive(path string) (string, error) {
 	if index := strings.Index(path, "/"); index != 0 {
-		return "", errors.New("illegal param")
+		return "", errors.New("file routing param illegal param")
 	}
 	var osType = runtime.GOOS
-	rootPath, _ := os.Getwd()
+	rootPath, err := os.Getwd()
+	if err != nil {
+		return "", errors.New("system os.pwd() error")
+	}
 	var adaptivePath = rootPath + path
 	if osType == "windows" {
 		adaptivePath = strings.ReplaceAll(adaptivePath, "/", "\\")

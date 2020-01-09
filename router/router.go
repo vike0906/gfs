@@ -15,13 +15,10 @@ func Start(p *string) {
 
 	//文件服务
 	router.GET("/download", download.DownloadHandle)
-	uploadServer := router.Group("/upload")
-	{
-		uploadServer.POST("/small", upload.SmallFileUpload)
-		uploadServer.POST("/init", upload.SmallFileUpload)
-		uploadServer.POST("/chunk", upload.SmallFileUpload)
-		uploadServer.POST("/merge", upload.SmallFileUpload)
-	}
+	router.POST("/upload", upload.SmallFileUpload)
+	router.POST("/init", upload.BigFileUploadInit)
+	router.POST("/chunk", upload.BigFileUploadChunk)
+	router.POST("/merge", upload.BigFileUploadMerge)
 
 	//账户授权
 	accreditServer := router.Group("/accredit")

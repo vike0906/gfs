@@ -16,7 +16,7 @@ import (
 const format = "/2006/01/02"
 
 type uploader interface {
-	gainSavePath(userFolder string) (string, error)
+	gainSavePath(persistFolder string) (string, error)
 
 	saveFile(file *multipart.FileHeader, path string, hash string) (int64, error)
 
@@ -26,11 +26,11 @@ type uploader interface {
 type uploadHelper struct {
 }
 
-func (u *uploadHelper) gainSavePath(userFolder string) (string, error) {
-	userFolder = "/resource/" + userFolder
+func (u *uploadHelper) gainSavePath(persistFolder string) (string, error) {
+	persistFolder = "/resource/" + persistFolder
 	var dateHelper = util.NewDateHelper()
 	var dateFolder = dateHelper.Format(time.Now(), format)
-	savePath, err := util.PathAdaptive(userFolder + dateFolder)
+	savePath, err := util.PathAdaptive(persistFolder + dateFolder)
 	if err != nil {
 		return "", err
 	}

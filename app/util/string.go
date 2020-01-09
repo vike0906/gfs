@@ -12,8 +12,7 @@ var stringArray = []string{"a", "b", "c", "d", "e", "f", "g", "h", "i", "j", "k"
 
 func UUID() string {
 	uuidStr := uuid.NewV4().String()
-	uuidStr = strings.ReplaceAll(uuidStr, "-", "")
-	return strings.ToUpper(uuidStr)
+	return strings.ReplaceAll(uuidStr, "-", "")
 }
 
 func RandomString(length int) string {
