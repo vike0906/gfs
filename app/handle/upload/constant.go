@@ -4,6 +4,7 @@ const (
 	errMessage      = "need param %s, but not found"
 	fileDownloadUrl = "http://host:port/download/"
 	fileCorrupted   = "file corrupted, please upload again"
+	chunkCountError = "count of chunks is error, upload failed"
 )
 
 const (
@@ -13,10 +14,12 @@ const (
 	paramFileHash       = "fileHash"
 	paramChunkCount     = "chunkCount"
 	paramChunkInfoArray = "chunkInfoArray"
-	paramParentFileHash = "parentFileHash"
-	paramChunkIndex     = "chunkIndex"
-	paramChunkStart     = "chunkStart"
-	paramChunkEnd       = "chunkEnd"
+	//paramParentFileHash = "parentFileHash"
+	paramChunkHash   = "chunkHash"
+	paramChunkIndex  = "chunkIndex"
+	paramChunkStart  = "chunkStart"
+	paramChunkEnd    = "chunkEnd"
+	paramChunkBinary = "chunkBinary"
 )
 
 const (

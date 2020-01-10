@@ -32,20 +32,31 @@ func newBigFUIResultUnExist(isExist uint8, chunkInfoArray *[]string) *BigFUIResu
 	return &BigFUIResult{IsExist: isExist, ChunkInfoArray: *chunkInfoArray}
 }
 
+type BigFUCResult struct {
+	FileHash  string `json:"fileHash"`
+	ChunkHash string `json:"chunkHash"`
+	Size      int64  `json:"size"`
+}
+
+func newBigFUCResult(fileHash, chunkHash string, size int64) *BigFUCResult {
+	return &BigFUCResult{FileHash: fileHash, ChunkHash: chunkHash, Size: size}
+}
+
 type bigFileInfo struct {
 	name         string
 	hash         string
 	chunkCount   uint16
-	chunkInfoMap *map[string]ChunkInfo
+	chunkInfoMap *map[string]*ChunkInfo
 }
 
-func newBigFileInfo(name, hash, chunkCount string, chunkInfoMap *map[string]ChunkInfo) (*bigFileInfo, error) {
+func newBigFileInfo(name, hash, chunkCount string) (*bigFileInfo, error) {
 	c, err := strconv.ParseInt(chunkCount, 10, 16)
 	if err != nil {
 		e := common.NewGfsError("param chunkSize conversion to int16 failed")
 		return nil, &e
 	}
-	return &bigFileInfo{name: name, hash: hash, chunkCount: uint16(c), chunkInfoMap: chunkInfoMap}, nil
+	chunkInfoMap := make(map[string]*ChunkInfo, uint16(c))
+	return &bigFileInfo{name: name, hash: hash, chunkCount: uint16(c), chunkInfoMap: &chunkInfoMap}, nil
 }
 
 type ChunkInfo struct {

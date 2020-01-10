@@ -9,7 +9,7 @@ import (
 
 func main() {
 
-	//初始化配置文件
+	//init config document
 	err := config.Init()
 	if err != nil {
 		log.Println(err.Error())
@@ -17,7 +17,7 @@ func main() {
 	}
 	log.Println("init config info success")
 
-	//初始化数据库连接
+	//int database connection pool
 	err = db.Init(&config.Info.Mysql)
 	if err != nil {
 		log.Println(err.Error())
@@ -25,6 +25,6 @@ func main() {
 	}
 	log.Println("init database success")
 
-	//启动路由服务
+	//http server start
 	router.Start(&config.Info.Server.Port)
 }

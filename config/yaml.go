@@ -44,3 +44,7 @@ func Init() error {
 	}
 	return nil
 }
+
+func ConfigInfo() *BaseInfo {
+	return &Info
+}

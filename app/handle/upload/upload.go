@@ -20,7 +20,7 @@ func SmallFileUpload(c *gin.Context) {
 	if err := smallFUParamCheck(c); err != nil {
 		log.Println(err.Error())
 		c.JSON(http.StatusOK, response.Fail(err.Error()))
-		return
+		c.Abort()
 	}
 
 	//TODO check uploadToken
@@ -85,37 +85,27 @@ func BigFileUploadInit(c *gin.Context) {
 		//TODO insert file info to database
 		c.JSON(http.StatusOK, response.SuccessWithContent(newBigFUIResultIsExist(exist, fileName, hash, fileDownloadUrl+resourceName)))
 	} else {
-		//not exist return the chunk's hash which is exist
-		var chunkInfoMap map[string]ChunkInfo
-		bigFileInfo, err := newBigFileInfo(fileName, hash, c.PostForm(paramChunkCount), &chunkInfoMap)
-		if err != nil {
-			log.Println(err.Error())
-			c.JSON(http.StatusOK, response.Fail(err.Error()))
-			return
-		}
-
+		//not exist
+		//return the chunk's hash which is exist
+		var existedChunkArray []string
 		parentFileInfo := tempInstance.getParentFileInfo(hash)
 		if parentFileInfo == nil {
+			bigFileInfo, err := newBigFileInfo(fileName, hash, c.PostForm(paramChunkCount))
+			if err != nil {
+				log.Println(err.Error())
+				c.JSON(http.StatusOK, response.Fail(err.Error()))
+				return
+			}
 			tempInstance.putBigFileInfo(hash, bigFileInfo)
+			existedChunkArray = make([]string, 0)
 		} else {
-			chunkInfoMap = *parentFileInfo.chunkInfoMap
+			chunkInfoMap := *parentFileInfo.chunkInfoMap
+			existedChunkArray = make([]string, 0, len(chunkInfoMap))
+			for k := range chunkInfoMap {
+				existedChunkArray = append(existedChunkArray, k)
+			}
 		}
-
-		chunkInfoMapLength := len(chunkInfoMap)
-		chunkArray := make([]string, chunkInfoMapLength, chunkInfoMapLength)
-		for k := range chunkInfoMap {
-			chunkArray = append(chunkArray, k)
-		}
-		c.JSON(http.StatusOK, response.SuccessWithContent(newBigFUIResultUnExist(unExit, &chunkArray)))
-
-		//var chunkHashArray = c.PostForm(paramChunkInfoArray)
-		//var cha []ChunkInfo
-		//if err := json.Unmarshal([]byte(chunkHashArray),&cha);err!=nil{
-		//	log.Println("解析失败"+err.Error())
-		//}else {
-		//	log.Println(cha)
-		//}
-		//log.Println(chunkHashArray)
+		c.JSON(http.StatusOK, response.SuccessWithContent(newBigFUIResultUnExist(unExit, &existedChunkArray)))
 	}
 
 }
@@ -131,14 +121,14 @@ func BigFileUploadChunk(c *gin.Context) {
 	//TODO check uploadToken
 
 	//hash and validation
-	fileBinary, _ := c.FormFile(paramFileBinary)
-	hash, err := ulr.hash(fileBinary)
+	chunkBinary, _ := c.FormFile(paramChunkBinary)
+	chunkHash, err := ulr.hash(chunkBinary)
 	if err != nil {
 		log.Println(err.Error())
 		c.JSON(http.StatusOK, response.Fail(err.Error()))
 		return
 	}
-	if fileHash := c.PostForm(paramFileHash); fileHash != hash {
+	if fileHash := c.PostForm(paramChunkHash); fileHash != chunkHash {
 		log.Println(err.Error())
 		c.JSON(http.StatusOK, response.Fail(fileCorrupted))
 		return
@@ -150,33 +140,56 @@ func BigFileUploadChunk(c *gin.Context) {
 		c.JSON(http.StatusOK, response.Fail(err.Error()))
 		return
 	}
-	//save chunk info
-	size, err := ulr.saveFile(fileBinary, savePath, hash)
+	//save chunk file
+	size, err := ulr.saveFile(chunkBinary, savePath, chunkHash)
 	if err != nil {
 		log.Println(err.Error())
 		c.JSON(http.StatusOK, response.Fail(err.Error()))
 		return
 	}
-	log.Println(size)
-
 	//add or update chunk upload info
-	chunkInfo, err := newChunkInfo(hash, c.PostForm(paramChunkIndex), c.PostForm(paramChunkStart), c.PostForm(paramChunkEnd))
+	chunkInfo, err := newChunkInfo(chunkHash, c.PostForm(paramChunkIndex), c.PostForm(paramChunkStart), c.PostForm(paramChunkEnd))
 	if err != nil {
 		log.Println(err.Error())
 		c.JSON(http.StatusOK, response.Fail(err.Error()))
 		return
 	}
-	parentFileInfo := tempInstance.getParentFileInfo(c.PostForm(paramParentFileHash))
-	var m = *parentFileInfo.chunkInfoMap
-	m[hash] = *chunkInfo
+	fileHash := c.PostForm(paramFileHash)
+	fileInfo := tempInstance.getParentFileInfo(fileHash)
+	var m = *fileInfo.chunkInfoMap
+	m[chunkHash] = chunkInfo
+	fileInfo.chunkInfoMap = &m
 
-	tempInstance.putChunkHash(hash, time.Now().Unix())
+	tempInstance.putChunkHash(chunkHash, time.Now().Unix())
 
-	c.JSON(http.StatusOK, response.SuccessWithMessage(""))
+	c.JSON(http.StatusOK, response.SuccessWithContent(newBigFUCResult(fileHash, chunkHash, size)))
 }
 
 func BigFileUploadMerge(c *gin.Context) {
-
+	//param check
+	if err := bigFFUMergeCheck(c); err != nil {
+		log.Println(err.Error())
+		c.JSON(http.StatusOK, response.Fail(err.Error()))
+		return
+	}
+	//TODO validation upload token
+	//获取file hash对应的待合并信息
+	fileHash := c.PostForm(paramFileHash)
+	//检查块是否全部上传
+	fileInfo := tempInstance.getParentFileInfo(fileHash)
+	chunkInfoMap := *fileInfo.chunkInfoMap
+	length := len(chunkInfoMap)
+	if fileInfo.chunkCount != uint16(length) {
+		c.JSON(http.StatusOK, response.Fail(chunkCountError))
+	}
+	//将map按照index转为有序数组
+	chunkSortArray := make([]*ChunkInfo, length, length)
+	for _, v := range chunkInfoMap {
+		chunkSortArray[v.Index] = v
+	}
+	//按顺序写入磁盘（name=uuid,检查start and end）
+	//计算文件hash并核对
+	//响应 newSmallFUResult(fileName, hash, fileDownloadUrl+resourceName, size)
 }
 
 //校验权限

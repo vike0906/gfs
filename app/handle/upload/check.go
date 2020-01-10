@@ -39,13 +39,12 @@ func bigFFUChunkCheck(c *gin.Context) error {
 	if err := paramCheck(c); err != nil {
 		return err
 	}
-	if parentFileHash := c.PostForm(paramParentFileHash); parentFileHash == "" {
-		err := common.NewGfsError(fmt.Sprintf(errMessage, paramParentFileHash))
+	if fileHashMap := tempInstance.getParentFileInfo(c.PostForm(paramFileHash)); fileHashMap == nil {
+		err := common.NewGfsError("file hash is error, you need restart the upload")
 		return &err
 	}
-	parentFileHashMap := tempInstance.getParentFileInfo(c.PostForm(paramParentFileHash))
-	if parentFileHashMap == nil {
-		err := common.NewGfsError("parent file hash is error")
+	if chunkHash := c.PostForm(paramChunkHash); chunkHash == "" {
+		err := common.NewGfsError(fmt.Sprintf(errMessage, paramChunkHash))
 		return &err
 	}
 	if chunkIndex := c.PostForm(paramChunkIndex); chunkIndex == "" {
@@ -60,9 +59,16 @@ func bigFFUChunkCheck(c *gin.Context) error {
 		err := common.NewGfsError(fmt.Sprintf(errMessage, paramChunkEnd))
 		return &err
 	}
-	if fileBinary, err := c.FormFile(paramFileBinary); err != nil || fileBinary.Size == 0 {
-		err := common.NewGfsError(fmt.Sprintf(errMessage, paramFileBinary))
+	if chunkBinary, err := c.FormFile(paramChunkBinary); err != nil || chunkBinary.Size == 0 {
+		err := common.NewGfsError(fmt.Sprintf(errMessage, paramChunkBinary))
 		return &err
+	}
+	return nil
+}
+
+func bigFFUMergeCheck(c *gin.Context) error {
+	if err := paramCheck(c); err != nil {
+		return err
 	}
 	return nil
 }
