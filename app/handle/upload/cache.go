@@ -24,12 +24,15 @@ func (f *fileCache) putBigFileInfo(bigFileHash string, bigFileInfo *bigFileInfo)
 	bigFileHashCache.Set(bigFileHash, bigFileInfo, cache.DefaultExpiration)
 }
 
-func (f *fileCache) getParentFileInfo(token string) *bigFileInfo {
-	ex, found := bigFileHashCache.Get(token)
+func (f *fileCache) getParentFileInfo(hash string) *bigFileInfo {
+	ex, found := bigFileHashCache.Get(hash)
 	if found {
 		return ex.(*bigFileInfo)
 	}
 	return nil
+}
+func (f *fileCache) deleteParentFileInfo(hash string) {
+	bigFileHashCache.Delete(hash)
 }
 
 func (f *fileCache) putChunkHash(hash string, timestamp int64) {

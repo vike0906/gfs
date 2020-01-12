@@ -15,15 +15,15 @@ import (
 
 const (
 	format  = "/2006/01/02"
-	bufSize = 64 * 1024
+	bufSize = 128 * 1024
 )
 
 type uploader interface {
 	gainSavePath(persistFolder string) (string, error)
 
-	saveFile(file *multipart.FileHeader, path string, resourceName string) (int64, error)
+	saveFile(file *multipart.FileHeader, path, resourceName string) (int64, error)
 
-	mergeChunk(chunkSortArray []*ChunkInfo, path string, resourceName string) (int64, error)
+	mergeChunk(chunkSortArray *[]*ChunkInfo, path, resourceName, tempPath string) (string, int64, error)
 
 	hash(file *multipart.FileHeader) (string, error)
 }
@@ -50,7 +50,7 @@ func (u *uploadHelper) gainSavePath(persistFolder string) (string, error) {
 	return savePath, nil
 }
 
-func (u *uploadHelper) saveFile(file *multipart.FileHeader, path string, resourceName string) (int64, error) {
+func (u *uploadHelper) saveFile(file *multipart.FileHeader, path, resourceName string) (int64, error) {
 
 	src, err := file.Open()
 	if err != nil {
@@ -74,7 +74,7 @@ func (u *uploadHelper) saveFile(file *multipart.FileHeader, path string, resourc
 	return io.Copy(out, src)
 }
 
-func (u *uploadHelper) mergeChunk(chunkSortArray []*ChunkInfo, path string, resourceName, tempPath string) (int64, error) {
+func (u *uploadHelper) mergeChunk(chunkSortArray *[]*ChunkInfo, path, resourceName, tempPath string) (string, int64, error) {
 	//创建待写入文件
 	var resource string
 	if osType := runtime.GOOS; osType == "windows" {
@@ -82,26 +82,47 @@ func (u *uploadHelper) mergeChunk(chunkSortArray []*ChunkInfo, path string, reso
 	} else {
 		resource = path + "/" + resourceName
 	}
-	file, err := os.OpenFile(resource, os.O_WRONLY|os.O_CREATE|os.O_EXCL|os.O_APPEND, 0600)
+	file, err := os.OpenFile(resource, os.O_RDWR|os.O_CREATE|os.O_TRUNC, 0600)
 	if err != nil {
-		return 0, &common.GfsError{Message: "create file failed"}
-	}
-	for _, v := range chunkSortArray {
-		var buf = make([]byte, bufSize)
-		tempPath = tempPath + v.Hash
-		chunkFile, err := os.OpenFile(tempPath, os.O_RDONLY, 0600)
-		if err != nil {
-			return 0, &common.GfsError{Message: "open temp file failed"}
-		} else {
-			io.CopyBuffer(file, chunkFile, buf)
-		}
-		chunkFile.Close()
+		return "", 0, &common.GfsError{Message: "create file failed"}
 	}
 	defer file.Close()
-	//检查当前文件size
-	//继续写入
-	//
-	return io.Copy(file, file)
+	var size int64
+	hash := md5.New()
+	for _, v := range *chunkSortArray {
+		tempResource := tempPath + v.Hash
+		chunkFile, err := os.OpenFile(tempResource, os.O_RDONLY, 0600)
+		//检查当前文件size
+		if err != nil {
+			chunkFile.Close()
+			return "", 0, &common.GfsError{Message: "open temp file failed"}
+		} else {
+			var buf = make([]byte, bufSize)
+			if written, err := io.CopyBuffer(file, chunkFile, buf); err != nil {
+				chunkFile.Close()
+				if err := os.Remove(resource); err != nil {
+					log.Printf("delete temp main file:%s error", resource)
+				}
+				return "", 0, &common.GfsError{Message: "copy temp file failed"}
+			} else {
+				chunkFile, _ := os.OpenFile(tempResource, os.O_RDONLY, 0600)
+				if _, err := io.CopyBuffer(hash, chunkFile, buf); err != nil {
+					chunkFile.Close()
+					return "", 0, &common.GfsError{Message: "copy temp file for hash failed"}
+				}
+				chunkFile.Close()
+				size = size + written
+			}
+		}
+		chunkFile.Close()
+
+		if err := os.Remove(tempResource); err != nil {
+			log.Println(err.Error())
+			log.Printf("delete temp chunk file:%s error", resource)
+		}
+	}
+
+	return hex.EncodeToString(hash.Sum(nil)), size, nil
 }
 func (u *uploadHelper) hash(file *multipart.FileHeader) (string, error) {
 	src, err := file.Open()
@@ -110,8 +131,11 @@ func (u *uploadHelper) hash(file *multipart.FileHeader) (string, error) {
 	}
 	defer src.Close()
 	hash := md5.New()
+
 	if _, err := io.Copy(hash, src); err != nil {
 		return "", &common.GfsError{Message: "create hash(md5) fail"}
 	}
-	return hex.EncodeToString(hash.Sum(nil)), nil
+	fileHash := hex.EncodeToString(hash.Sum(nil))
+	hash.Reset()
+	return fileHash, nil
 }

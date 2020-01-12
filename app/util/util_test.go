@@ -15,9 +15,9 @@ func TestPathAdaptive(t *testing.T) {
 func TestUUID(t *testing.T) {
 	var sysMap sync.Map
 	var wg sync.WaitGroup
-	wg.Add(1000000)
+	wg.Add(100000)
 	var begin int64 = time.Now().UnixNano()
-	for i := 0; i < 1000000; i++ {
+	for i := 0; i < 100000; i++ {
 		go func() {
 			sysMap.Store(UUID(), 0)
 			wg.Done()

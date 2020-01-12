@@ -6,7 +6,7 @@ import (
 	"net/http"
 )
 
-func DownloadHandle(c *gin.Context) {
+func HandleDownload(c *gin.Context) {
 	var response = common.Response{}
 	c.JSON(http.StatusOK, response.Success())
 }

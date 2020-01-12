@@ -70,6 +70,10 @@ func bigFFUMergeCheck(c *gin.Context) error {
 	if err := paramCheck(c); err != nil {
 		return err
 	}
+	if fileHashMap := tempInstance.getParentFileInfo(c.PostForm(paramFileHash)); fileHashMap == nil {
+		err := common.NewGfsError("file hash is error, you need restart the upload")
+		return &err
+	}
 	return nil
 }
 

@@ -175,10 +175,10 @@ func BigFileUploadMerge(c *gin.Context) {
 	//TODO validation upload token
 	//获取file hash对应的待合并信息
 	fileHash := c.PostForm(paramFileHash)
-	//检查块是否全部上传
 	fileInfo := tempInstance.getParentFileInfo(fileHash)
 	chunkInfoMap := *fileInfo.chunkInfoMap
 	length := len(chunkInfoMap)
+	//检查块是否全部上传
 	if fileInfo.chunkCount != uint16(length) {
 		c.JSON(http.StatusOK, response.Fail(chunkCountError))
 	}
@@ -187,9 +187,31 @@ func BigFileUploadMerge(c *gin.Context) {
 	for _, v := range chunkInfoMap {
 		chunkSortArray[v.Index] = v
 	}
+	//gain save path TODO: from database
+	savePath, err := ulr.gainSavePath("persist")
+	if err != nil {
+		log.Println(err.Error())
+		c.JSON(http.StatusOK, response.Fail(err.Error()))
+		return
+	}
+	//gain save path
+	tempPath, err := util.PathAdaptive("/resource/temp/")
+	if err != nil {
+		log.Println(err.Error())
+		c.JSON(http.StatusOK, response.Fail(err.Error()))
+		return
+	}
 	//按顺序写入磁盘（name=uuid,检查start and end）
-	//计算文件hash并核对
+	var resourceName = util.UUID()
+	hash, size, err := ulr.mergeChunk(&chunkSortArray, savePath, resourceName, tempPath)
+	if err != nil {
+		c.JSON(http.StatusOK, response.Fail(err.Error()))
+		return
+	}
+	tempInstance.deleteParentFileInfo(fileHash)
+	//TODO 计算文件hash并核对
 	//响应 newSmallFUResult(fileName, hash, fileDownloadUrl+resourceName, size)
+	c.JSON(http.StatusOK, response.SuccessWithContent(newSmallFUResult(fileInfo.name, hash, fileDownloadUrl+resourceName, size)))
 }
 
 //校验权限

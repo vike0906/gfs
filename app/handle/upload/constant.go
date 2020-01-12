@@ -1,10 +1,11 @@
 package upload
 
 const (
-	errMessage      = "need param %s, but not found"
-	fileDownloadUrl = "http://host:port/download/"
-	fileCorrupted   = "file corrupted, please upload again"
-	chunkCountError = "count of chunks is error, upload failed"
+	errMessage       = "need param %s, but not found"
+	fileDownloadUrl  = "http://host:port/download/"
+	fileCorrupted    = "file corrupted, please upload again"
+	chunkCountError  = "count of chunks is error, upload failed"
+	fileHashNotExist = "file hash should exist, but not"
 )
 
 const (

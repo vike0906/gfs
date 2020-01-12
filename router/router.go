@@ -14,7 +14,7 @@ func Start(p *string) {
 	router.Use(cors())
 
 	//文件服务
-	router.GET("/download", download.DownloadHandle)
+	router.GET("/download", download.HandleDownload)
 	router.POST("/upload", upload.SmallFileUpload)
 	router.POST("/init", upload.BigFileUploadInit)
 	router.POST("/chunk", upload.BigFileUploadChunk)
