@@ -22,3 +22,10 @@ func PathAdaptive(path string) (string, error) {
 	}
 	return adaptivePath, nil
 }
+func ResourcePathAdaptive(path string) string {
+	var osType = runtime.GOOS
+	if osType == "windows" {
+		return strings.ReplaceAll(path, "/", "\\")
+	}
+	return path
+}

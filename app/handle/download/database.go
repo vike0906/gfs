@@ -1,8 +1,8 @@
 package download
 
 import (
+	"gfs/app/db"
 	"gfs/app/repository/model"
-	"gfs/db"
 )
 
 //query file info by key

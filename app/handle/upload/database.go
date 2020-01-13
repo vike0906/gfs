@@ -1,8 +1,8 @@
 package upload
 
 import (
+	"gfs/app/db"
 	"gfs/app/repository/model"
-	"gfs/db"
 )
 
 //check file is exist

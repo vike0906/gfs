@@ -1,8 +1,8 @@
 package main
 
 import (
+	"gfs/app/db"
 	"gfs/config"
-	"gfs/db"
 	"gfs/router"
 	"log"
 )
