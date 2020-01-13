@@ -11,6 +11,9 @@ func CheckAndCreates(db *gorm.DB) error {
 	if err = checkAndCreate(db, &model.User{}); err != nil {
 		return err
 	}
+	if err = checkAndCreate(db, &model.File{}); err != nil {
+		return err
+	}
 	return nil
 }
 

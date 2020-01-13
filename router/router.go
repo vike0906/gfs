@@ -11,10 +11,13 @@ func Start(p *string) {
 	router := gin.New()
 	router.Use(gin.Logger())
 	router.Use(gin.Recovery())
+	router.MaxMultipartMemory = 2 << 20
 	router.Use(cors())
+	router.NoRoute(handleNotFound)
+	router.NoMethod(handleNotFound)
 
 	//文件服务
-	router.GET("/download", download.HandleDownload)
+	router.GET("/download/:key", download.Download)
 	router.POST("/upload", upload.SmallFileUpload)
 	router.POST("/init", upload.BigFileUploadInit)
 	router.POST("/chunk", upload.BigFileUploadChunk)

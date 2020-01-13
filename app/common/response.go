@@ -12,6 +12,10 @@ const (
 	SuccessMessage = "success"
 )
 
+var (
+	NewResponse = ResponseInstance()
+)
+
 func ResponseInstance() *Response {
 	return new(Response)
 }

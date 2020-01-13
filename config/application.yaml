@@ -7,3 +7,5 @@ mysql:
   dataBase: gfs
   userName: gfs_user
   password: gfs_psd
+
+#TODO 文件保存目录，文件下载地址，均实现可动态配置

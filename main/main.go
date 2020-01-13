@@ -2,6 +2,7 @@ package main
 
 import (
 	"gfs/config"
+	"gfs/db"
 	"gfs/router"
 	"log"
 )
@@ -16,12 +17,12 @@ func main() {
 	}
 	log.Println("init config info success")
 
-	//int database connection pool
-	//err = db.Init(&config.Info.Mysql)
-	//if err != nil {
-	//	log.Println(err.Error())
-	//	return
-	//}
+	//init database connection pool
+	err = db.Init(&config.Info.Mysql)
+	if err != nil {
+		log.Println(err.Error())
+		return
+	}
 	log.Println("init database success")
 
 	//http server start

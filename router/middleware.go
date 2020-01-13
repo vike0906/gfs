@@ -1,6 +1,7 @@
 package router
 
 import (
+	"gfs/app/common"
 	"github.com/gin-gonic/gin"
 	"net/http"
 )
@@ -22,4 +23,9 @@ func cors() gin.HandlerFunc {
 		// handle request
 		c.Next()
 	}
+}
+
+func handleNotFound(c *gin.Context) {
+	c.JSON(http.StatusOK, common.ResponseInstance().Fail("Not Found Error"))
+	return
 }

@@ -14,15 +14,6 @@
 </head>
 
 <body>
-    <!-- <div class="progress">
-        <div id="progressBar" class="progress-bar progress-bar-striped bg-success" role="progressbar" style="width: 25%"  aria-valuenow="0" aria-valuemin="0" aria-valuemax="100"></div>
-      </div>
-    <progress id="progressBar" value="0" max="100" style="width: 300px;"></progress>
-    <span id="percentage"></span><span id="time"></span>
-    <br /><br />
-    <input type="file" id="file" name="myfile" />
-    <input type="button" onclick="UpladFile()" value="上传" />
-    <input type="button" onclick="cancleUploadFile()" value="取消" /> -->
     <div class="content">
         <br><br>
         <h2>文件服务器上传示例</h2>
@@ -47,7 +38,6 @@
         </div>
         <br><br>
         <div class="logInfo">
-            <br>
         <div id="info0"></div>
         <div id="info1"></div>
         <div id="info2"></div>
@@ -81,12 +71,14 @@
         if (isChunk == false) {
             //直接上传
             let re = await smallUplaod(server, uploadToken, file);
-            processStatus(false);
-            if (re != 0) {
+            if (re == 0) {
+                message("直传成功");
+            }else{
+                reset();
                 message(re);
-                $('#restart').attr("disabled", false);
             }
-
+            processStatus(false);
+            $('#restart').attr("disabled", false);
         } else {
             //分片上传
             $('#stop').attr("disabled", false);
@@ -94,13 +86,17 @@
             $('#stop').attr("disabled", true);
             processStatus(false);
             if (re == 0) {
+                processUpdate(100);
                 message("上传成功，秒传！！！");
             } else if (re == 1) {
                 message("上传成功");
-            } else {
+            } else if(re==2){
+                message("上传暂停");
+            }else{
                 message(re);
-                $('#restart').attr("disabled", false);
+                reset();
             }
+            $('#restart').attr("disabled", false);
         }
     }
     function stop() {
@@ -113,26 +109,41 @@
         //继续上传
         $('#goOn').attr("disabled", true);
         $('#stop').attr("disabled", false);
+        let file = $("#customFile")[0].files[0];
         bigFileUploadSwitch = true;
         processStatus(true);
         if (isInit == false) {
             let re = await bigFileUpload(server, uploadToken, file);
-            processStatus(false);
-        } else {
-            let file = $("#customFile")[0].files[0];
-            let re = await uploadAfterInit(file);
-            processStatus(false);
             $('#stop').attr("disabled", true);
+            processStatus(false);
+            if (re == 0) {
+                message("上传成功，秒传！！！");
+            } else if (re == 1) {
+                message("上传成功");
+            } else if(re==2){
+                message("上传暂停");
+            }else{
+                message(re);
+                reset();
+            }
+            $('#restart').attr("disabled", false);
+        } else {
+            let re = await uploadAfterInit(file);
             if (re == 1) {
                 message("上传成功");
-            } else {
+            } else if(re==2){
+                message("上传暂停");
+            }else{
                 message(re);
-                $('#restart').attr("disabled", false);
+                reset();
             }
+            processStatus(false);
+            $('#stop').attr("disabled", true);
+            $('#restart').attr("disabled", false);
         }
 
     }
-    function restart(){
+    function restartUpload(){
         reset();
         startUpload();
 
@@ -172,7 +183,7 @@
         text-align: left;
     }
     .logInfo{
-        width: 70%;
+        width: 90%;
         margin: 0 auto;
     }
 </style>

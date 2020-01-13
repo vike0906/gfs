@@ -32,7 +32,7 @@ async function bigFileUpload(server, uploadToken, file) {
         resolve("上传初始化失败");
         return
     } else if (initResponse.content.isExist == 1) {
-        resolve(1);
+        resolve(0);
         return
     } else {
         existedChunkArray = initResponse.content.chunkInfoArray;
@@ -52,7 +52,7 @@ async function uploadAfterInit(file){
         //upload chunks
         for (; currentChunkIndex < chunkCount;) {
             if(bigFileUploadSwitch==false){
-                resolve("上传取消");
+                resolve(2);
                 return
             }
             let startIndex = currentChunkIndex * chunkSize;
@@ -62,6 +62,7 @@ async function uploadAfterInit(file){
             message(chunkHash);
             if (existedChunkArray.indexOf(chunkHash) < 0) {
                 let chunkResponse = await uploadChunk(server, uploadToken, fileHash, chunkHash, currentChunkIndex, startIndex, endIndex, chunkBinary);
+                message(chunkResponse);
                 if (chunkResponse.code != 0) {
                     resolve("块文件上传失败");
                     return
@@ -93,44 +94,6 @@ async function uploadAfterInit(file){
     
 }
 
-//计算目标文件MD5
-async function fileMd5(file) {
-    return new Promise((resolve, reject) => {
-        let blobSlice = File.prototype.slice || File.prototype.mozSlice || File.prototype.webkitSlice;
-        let chunkSize = 2097152; // 每次读取2MB
-        let startIndex = 0;
-        let endIndex = 0;
-        let spark = new SparkMD5.ArrayBuffer();
-        function frOnload(e) {
-            spark.append(e.target.result);
-            if (endIndex < file.size) {
-                readChunk();
-            } else {
-                resolve(spark.end());
-            }
-        };
-        function frOnerror() {
-            reject("calculate md5 for binary fialed");
-        };
-        let fileReader = new FileReader();
-        fileReader.onload = frOnload;
-        fileReader.onerror = frOnerror;
-        function readChunk() {
-            endIndex = ((startIndex + chunkSize) >= file.size) ? file.size : startIndex + chunkSize;
-            fileReader.readAsArrayBuffer(blobSlice.call(file, startIndex, endIndex));
-            startIndex = startIndex + chunkSize;
-        }
-        readChunk();
-    });
-}
-//进度监控
-function onprogress() {
-
-}
-//速度监控
-function speed() {
-
-}
 //文件直传
 async function uploadDirect(server, uploadToken, fileBinary, fileHash, fileName) {
     return new Promise(resolve => {
@@ -251,6 +214,36 @@ function processStatus(x) {
         $('#progressbar').removeClass("progress-bar-animated")
     }
 }
+//计算目标文件MD5
+async function fileMd5(file) {
+    return new Promise((resolve, reject) => {
+        let blobSlice = File.prototype.slice || File.prototype.mozSlice || File.prototype.webkitSlice;
+        let chunkSize = 2097152; // 每次读取2MB
+        let startIndex = 0;
+        let endIndex = 0;
+        let spark = new SparkMD5.ArrayBuffer();
+        function frOnload(e) {
+            spark.append(e.target.result);
+            if (endIndex < file.size) {
+                readChunk();
+            } else {
+                resolve(spark.end());
+            }
+        };
+        function frOnerror() {
+            reject("calculate md5 for binary fialed");
+        };
+        let fileReader = new FileReader();
+        fileReader.onload = frOnload;
+        fileReader.onerror = frOnerror;
+        function readChunk() {
+            endIndex = ((startIndex + chunkSize) >= file.size) ? file.size : startIndex + chunkSize;
+            fileReader.readAsArrayBuffer(blobSlice.call(file, startIndex, endIndex));
+            startIndex = startIndex + chunkSize;
+        }
+        readChunk();
+    });
+}
 //各全局变量恢复初始状态
 function reset() {
     isInit = false;
@@ -263,8 +256,8 @@ function reset() {
     processInfoSwitch(false);
 }
 //打印操作日志
-
 function message(info){
+    console.log(info);
     if(infoArray.length<5){
         //直接添加
         infoArray[infoArray.length] = info;
@@ -281,9 +274,8 @@ function message(info){
 }
 function printInfo(){
     for(let x=0;x<infoArray.length;x++){
-        
         let infoIndex = '#info'+x;
-        let info = "<div class='alert alert-info' id='info"+x+"' role='alert'>"+infoArray[x]+"</div>";
+        let info = "<div class='alert alert-info' id='info"+x+"' role='alert'>"+JSON.stringify(infoArray[x])+"</div>";
         $(infoIndex).replaceWith(info);
     }
 }

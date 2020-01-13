@@ -6,6 +6,7 @@ const (
 	fileCorrupted    = "file corrupted, please upload again"
 	chunkCountError  = "count of chunks is error, upload failed"
 	fileHashNotExist = "file hash should exist, but not"
+	saveRecordError  = "insert new record to database failed"
 )
 
 const (

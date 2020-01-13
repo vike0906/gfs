@@ -2,6 +2,7 @@ package upload
 
 import (
 	"gfs/app/common"
+	"gfs/app/repository/model"
 	"gfs/app/util"
 	"github.com/gin-gonic/gin"
 	"log"
@@ -38,28 +39,46 @@ func SmallFileUpload(c *gin.Context) {
 		return
 	}
 
-	//gain save path TODO: from database
-	savePath, err := ulr.gainSavePath("persist")
+	//judge file is exist?
+	fileInfo, err := queryFileByHash(hash)
+	var size int64
+	var resourceName, savePath string
 	if err != nil {
-		log.Println(err.Error())
-		c.JSON(http.StatusOK, response.Fail(err.Error()))
-		return
-	}
+		//file is not exist
 
-	//save file
-	var resourceName = util.UUID()
-	size, err := ulr.saveFile(fileBinary, savePath, resourceName)
-	if err != nil {
-		log.Println(err.Error())
-		c.JSON(http.StatusOK, response.Fail(err.Error()))
-		return
-	}
+		//gain save path TODO: from database
+		savePath, err = ulr.gainSavePath("persist")
+		if err != nil {
+			log.Println(err.Error())
+			c.JSON(http.StatusOK, response.Fail(err.Error()))
+			return
+		}
 
+		//save file
+		resourceName = util.UUID()
+		size, err = ulr.saveFile(fileBinary, savePath, resourceName)
+		if err != nil {
+			log.Println(err.Error())
+			c.JSON(http.StatusOK, response.Fail(err.Error()))
+			return
+		}
+	} else {
+		//file is existed
+		resourceName = fileInfo.ResourceName
+		size = fileInfo.Size
+		savePath = fileInfo.ResourcePath
+	}
 	fileName := c.PostForm(paramFileName)
 
-	//TODO insert file info to database
-
-	c.JSON(http.StatusOK, response.SuccessWithContent(newSmallFUResult(fileName, hash, fileDownloadUrl+resourceName, size)))
+	//insert file info to database
+	key := util.UUID()
+	newRecord := model.NewFileForDataBase(1, key, fileName, savePath, resourceName, hash, size, model.Public, model.Uploaded)
+	re := saveFileInfo(newRecord)
+	if re {
+		c.JSON(http.StatusOK, response.Fail(saveRecordError))
+		return
+	}
+	c.JSON(http.StatusOK, response.SuccessWithContent(newSmallFUResult(fileName, hash, fileDownloadUrl+key, size)))
 
 	//TODO back up
 }
@@ -73,17 +92,21 @@ func BigFileUploadInit(c *gin.Context) {
 
 	//TODO uploadToken validation
 
-	//TODO judge file is exist?
+	// judge file is exist?
 	hash := c.PostForm(paramFileHash)
 	fileName := c.PostForm(paramFileName)
-
-	var isExist bool
-
-	if isExist {
-		//TODO crate logic link
-		var resourceName = util.UUID()
-		//TODO insert file info to database
-		c.JSON(http.StatusOK, response.SuccessWithContent(newBigFUIResultIsExist(exist, fileName, hash, fileDownloadUrl+resourceName)))
+	fileInfo, err := queryFileByHash(hash)
+	if err == nil {
+		// crate logic link
+		//insert file info to database
+		key := util.UUID()
+		newRecord := model.NewFileForDataBase(1, key, fileName, fileInfo.ResourcePath, fileInfo.ResourceName, fileInfo.HashMd5, fileInfo.Size, model.Public, model.Uploaded)
+		re := saveFileInfo(newRecord)
+		if re {
+			c.JSON(http.StatusOK, response.Fail(saveRecordError))
+			return
+		}
+		c.JSON(http.StatusOK, response.SuccessWithContent(newBigFUIResultIsExist(exist, fileName, fileInfo.HashMd5, fileDownloadUrl+key)))
 	} else {
 		//not exist
 		//return the chunk's hash which is exist
@@ -173,16 +196,16 @@ func BigFileUploadMerge(c *gin.Context) {
 		return
 	}
 	//TODO validation upload token
-	//获取file hash对应的待合并信息
+	//get merge info by file hash
 	fileHash := c.PostForm(paramFileHash)
 	fileInfo := tempInstance.getParentFileInfo(fileHash)
 	chunkInfoMap := *fileInfo.chunkInfoMap
 	length := len(chunkInfoMap)
-	//检查块是否全部上传
+	//check is all chunks unloaded
 	if fileInfo.chunkCount != uint16(length) {
 		c.JSON(http.StatusOK, response.Fail(chunkCountError))
 	}
-	//将map按照index转为有序数组
+	//map to sorted array
 	chunkSortArray := make([]*ChunkInfo, length, length)
 	for _, v := range chunkInfoMap {
 		chunkSortArray[v.Index] = v
@@ -194,24 +217,41 @@ func BigFileUploadMerge(c *gin.Context) {
 		c.JSON(http.StatusOK, response.Fail(err.Error()))
 		return
 	}
-	//gain save path
+	//get temp save path
 	tempPath, err := util.PathAdaptive("/resource/temp/")
 	if err != nil {
 		log.Println(err.Error())
 		c.JSON(http.StatusOK, response.Fail(err.Error()))
 		return
 	}
-	//按顺序写入磁盘（name=uuid,检查start and end）
+	//io（name=uuid,check start and end）
 	var resourceName = util.UUID()
 	hash, size, err := ulr.mergeChunk(&chunkSortArray, savePath, resourceName, tempPath)
 	if err != nil {
 		c.JSON(http.StatusOK, response.Fail(err.Error()))
 		return
 	}
+	//check hash value
+	if fileHash != hash {
+		c.JSON(http.StatusOK, response.Fail(fileCorrupted))
+		return
+	}
+
+	//insert into database
+	key := util.UUID()
+	newRecord := model.NewFileForDataBase(1, key, fileInfo.name, savePath, resourceName, hash, size, model.Public, model.Uploaded)
+	re := saveFileInfo(newRecord)
+	if re {
+		c.JSON(http.StatusOK, response.Fail(saveRecordError))
+		return
+	}
+
+	//delete big file cache info
 	tempInstance.deleteParentFileInfo(fileHash)
-	//TODO 计算文件hash并核对
-	//响应 newSmallFUResult(fileName, hash, fileDownloadUrl+resourceName, size)
-	c.JSON(http.StatusOK, response.SuccessWithContent(newSmallFUResult(fileInfo.name, hash, fileDownloadUrl+resourceName, size)))
+
+	c.JSON(http.StatusOK, response.SuccessWithContent(newSmallFUResult(fileInfo.name, hash, fileDownloadUrl+key, size)))
+
+	//TODO back up
 }
 
 //校验权限
