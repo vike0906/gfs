@@ -1,0 +1,180 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <meta charset="UTF-8">
+    <title>文件上传服务</title>
+    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/css/bootstrap.min.css">
+    <script src="https://code.jquery.com/jquery-3.3.1.slim.min.js"></script>
+    <!-- <script src="https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.14.7/umd/popper.min.js"></script>
+    <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/js/bootstrap.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/spark-md5/3.0.0/spark-md5.min.js"></script> -->
+    <script src="./spark-md5.min.js"></script>
+    <script src="./component.js"></script>
+</head>
+
+<body>
+    <!-- <div class="progress">
+        <div id="progressBar" class="progress-bar progress-bar-striped bg-success" role="progressbar" style="width: 25%"  aria-valuenow="0" aria-valuemin="0" aria-valuemax="100"></div>
+      </div>
+    <progress id="progressBar" value="0" max="100" style="width: 300px;"></progress>
+    <span id="percentage"></span><span id="time"></span>
+    <br /><br />
+    <input type="file" id="file" name="myfile" />
+    <input type="button" onclick="UpladFile()" value="上传" />
+    <input type="button" onclick="cancleUploadFile()" value="取消" /> -->
+    <div class="content">
+        <br><br>
+        <h2>文件服务器上传示例</h2>
+        <br>
+        <hr id="progressInfo">
+        <br><br>
+        <div class="upload-input">
+            <div class="custom-file">
+                <input type="file" class="custom-file-input" id="customFile" onchange="customFileChange()">
+                <label class="custom-file-label" for="customFile" id="fileLable">选择文件</label>
+            </div>
+            <br><br>
+            <div class="form-check">
+                <input class="form-check-input" type="checkbox" id="isChunk">
+                <label class="form-check-label" for="isChunk">分块上传</label>
+            </div>
+            <br>
+            <button class="btn btn-info" id="start" onclick="startUpload()" disabled>开始上传</button>&nbsp;
+            <button class="btn btn-info" id="stop" onclick="stop()" disabled>暂停</button>&nbsp;
+            <button class="btn btn-info" id="goOn" onclick="goOn()" disabled>继续</button>&nbsp;
+            <button class="btn btn-info" id="restart" onclick="restartUpload()" disabled>重新上传</button>
+        </div>
+        <br><br>
+        <div class="logInfo">
+            <br>
+        <div id="info0"></div>
+        <div id="info1"></div>
+        <div id="info2"></div>
+        <div id="info3"></div>
+        <div id="info4"></div>
+        </div>
+        
+    </div>
+</body>
+<script>
+    //公用全局变量
+    let maxUploadDirectSize = 32 * 1024 * 1024;
+    let server = "http://localhost:9090";
+    let uploadToken = "uploadToken"//获取token
+    let infoArray = new Array();//储存操作信息
+
+    //分片上传
+    let isInit = false;
+    let bigFileUploadSwitch = true;//分片上传开关
+    let chunkSize = 2097152; // 分块尺寸2MB
+    let chunkCount = 0;//分块数量，最大支持65535
+    let currentChunkIndex = 0;//当前块
+    let existedChunkArray = new Array();//已存在块
+    let fileHash = '';//文件hash值
+
+
+    async function startUpload() {
+        let file = $("#customFile")[0].files[0];
+        let isChunk = $("#isChunk").prop('checked');
+        $('#start').attr("disabled", true);
+        if (isChunk == false) {
+            //直接上传
+            let re = await smallUplaod(server, uploadToken, file);
+            processStatus(false);
+            if (re != 0) {
+                message(re);
+                $('#restart').attr("disabled", false);
+            }
+
+        } else {
+            //分片上传
+            $('#stop').attr("disabled", false);
+            let re = await bigFileUpload(server, uploadToken, file);
+            $('#stop').attr("disabled", true);
+            processStatus(false);
+            if (re == 0) {
+                message("上传成功，秒传！！！");
+            } else if (re == 1) {
+                message("上传成功");
+            } else {
+                message(re);
+                $('#restart').attr("disabled", false);
+            }
+        }
+    }
+    function stop() {
+        $('#stop').attr("disabled", true);
+        $('#goOn').attr("disabled", false);
+        processStatus(false);
+        bigFileUploadSwitch = false;
+    }
+    async function goOn() {
+        //继续上传
+        $('#goOn').attr("disabled", true);
+        $('#stop').attr("disabled", false);
+        bigFileUploadSwitch = true;
+        processStatus(true);
+        if (isInit == false) {
+            let re = await bigFileUpload(server, uploadToken, file);
+            processStatus(false);
+        } else {
+            let file = $("#customFile")[0].files[0];
+            let re = await uploadAfterInit(file);
+            processStatus(false);
+            $('#stop').attr("disabled", true);
+            if (re == 1) {
+                message("上传成功");
+            } else {
+                message(re);
+                $('#restart').attr("disabled", false);
+            }
+        }
+
+    }
+    function restart(){
+        reset();
+        startUpload();
+
+    }
+    function customFileChange() {
+        let fileName = $("#customFile")[0].files[0].name;
+        $("#fileLable").html(fileName);
+        $('#start').attr("disabled", false);
+        $('#restart').attr("disabled", true);
+        reset();
+    }
+
+</script>
+<style>
+    html,
+    body {
+        width: 100%;
+        height: 100%;
+        text-align: center;
+    }
+
+    .content {
+        height: 80%;
+        width: 80%;
+        top: 20px;
+        margin: 5rem auto;
+        background-color: #f5f5f6;
+    }
+
+    .upload-input {
+        width: 50%;
+        margin: 0 auto;
+        text-align: left;
+    }
+
+    .custom-file {
+        text-align: left;
+    }
+    .logInfo{
+        width: 70%;
+        margin: 0 auto;
+    }
+</style>
+
+</html>
