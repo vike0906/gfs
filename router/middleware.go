@@ -5,9 +5,7 @@ import (
 	"gfs/app/common"
 	log "gfs/app/logger"
 	"github.com/gin-gonic/gin"
-	"io"
 	"net/http"
-	"os"
 	"time"
 )
 
@@ -32,7 +30,7 @@ func cors() gin.HandlerFunc {
 
 func logger() gin.HandlerFunc {
 	c := gin.LoggerConfig{
-		Output:    io.MultiWriter(os.Stdout, log.GetLogWriter()),
+		Output:    *log.GetLogWriter(),
 		SkipPaths: []string{"/vue"},
 		Formatter: func(params gin.LogFormatterParams) string {
 			return fmt.Sprintf("[GIN]%s - [%s] \"%s %s %s %d %s \"%s\" %s\"\n",

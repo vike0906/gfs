@@ -26,5 +26,5 @@ func main() {
 	log.Println("init database success")
 
 	//http server start
-	router.Start(&config.Info.Server.Port)
+	router.Start(&config.Info.Server)
 }

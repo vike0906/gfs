@@ -1,5 +1,6 @@
 server:
-  port: 9090
+  apiPort: :9090
+  webPort: :9091
 
 mysql:
   host: 106.13.222.152

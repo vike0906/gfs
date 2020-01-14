@@ -2,7 +2,6 @@ package logger
 
 import (
 	"fmt"
-	"io"
 	"log"
 	"os"
 )
@@ -18,17 +17,14 @@ const (
 )
 
 var (
-	logPrefix  = ""
+	logPrefix = ""
+
 	levelFlags = []string{"DEBG", "INFO", "WARN", "ERRO", "FATL"}
 
 	logInstance *log.Logger
 
 	logfile *os.File
 )
-
-func init() {
-	logInstance = log.New(io.MultiWriter(os.Stdout, logWriter), "[default] ", log.LstdFlags|log.Lshortfile)
-}
 
 // Debug ...
 func Debug(v ...interface{}) {

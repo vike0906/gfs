@@ -13,7 +13,8 @@ type BaseInfo struct {
 }
 
 type Server struct {
-	Port string `yaml:"port"`
+	ApiPort string `yaml:"apiPort"`
+	WebPort string `yaml:"webPort"`
 }
 
 type Mysql struct {
@@ -43,8 +44,4 @@ func Init() error {
 		return err
 	}
 	return nil
-}
-
-func ConfigInfo() *BaseInfo {
-	return &Info
 }
