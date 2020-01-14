@@ -3,6 +3,7 @@ package download
 import (
 	"fmt"
 	"gfs/app/component"
+	"gfs/app/logger"
 	"gfs/app/util"
 	"github.com/gin-gonic/gin"
 	"net/http"
@@ -13,6 +14,7 @@ func Download(c *gin.Context) {
 	key := c.Param("key")
 	fileInfo, err := queryFileByKey(key)
 	if err != nil {
+		logger.Error(err.Error())
 		c.JSON(http.StatusOK, response.Fail(resourceNotFount))
 		return
 	}

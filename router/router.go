@@ -9,9 +9,11 @@ import (
 func Start(p *string) {
 
 	router := gin.New()
-	router.Use(gin.Logger())
-	router.Use(gin.Recovery())
 	router.MaxMultipartMemory = 2 << 20
+	router.Use(gin.Recovery())
+	//gin.SetMode(gin.ReleaseMode)
+	//router.Use(gin.LoggerWithWriter(config.GetLogWriter(),"/vue"))
+	router.Use(logger())
 	router.Use(cors())
 	router.NoRoute(handleNotFound)
 	router.NoMethod(handleNotFound)

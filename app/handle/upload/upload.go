@@ -2,10 +2,10 @@ package upload
 
 import (
 	"gfs/app/common"
+	"gfs/app/logger"
 	"gfs/app/repository/model"
 	"gfs/app/util"
 	"github.com/gin-gonic/gin"
-	"log"
 	"net/http"
 	"time"
 )
@@ -19,7 +19,7 @@ var (
 func SmallFileUpload(c *gin.Context) {
 	//check params
 	if err := smallFUParamCheck(c); err != nil {
-		log.Println(err.Error())
+		logger.Error(err.Error())
 		c.JSON(http.StatusOK, response.Fail(err.Error()))
 		c.Abort()
 	}
@@ -30,7 +30,7 @@ func SmallFileUpload(c *gin.Context) {
 	fileBinary, err := c.FormFile(paramFileBinary)
 	hash, err := ulr.hash(fileBinary)
 	if err != nil {
-		log.Println(err.Error())
+		logger.Error(err.Error())
 		c.JSON(http.StatusOK, response.Fail(err.Error()))
 		return
 	}
@@ -49,7 +49,7 @@ func SmallFileUpload(c *gin.Context) {
 		//gain save path TODO: from database
 		savePath, err = ulr.gainSavePath("persist")
 		if err != nil {
-			log.Println(err.Error())
+			logger.Error(err.Error())
 			c.JSON(http.StatusOK, response.Fail(err.Error()))
 			return
 		}
@@ -58,7 +58,7 @@ func SmallFileUpload(c *gin.Context) {
 		resourceName = util.UUID()
 		size, err = ulr.saveFile(fileBinary, savePath, resourceName)
 		if err != nil {
-			log.Println(err.Error())
+			logger.Error(err.Error())
 			c.JSON(http.StatusOK, response.Fail(err.Error()))
 			return
 		}
@@ -85,7 +85,7 @@ func SmallFileUpload(c *gin.Context) {
 
 func BigFileUploadInit(c *gin.Context) {
 	if err := bigFFUInitCheck(c); err != nil {
-		log.Println(err.Error())
+		logger.Error(err.Error())
 		c.JSON(http.StatusOK, response.Fail(err.Error()))
 		return
 	}
@@ -115,7 +115,7 @@ func BigFileUploadInit(c *gin.Context) {
 		if parentFileInfo == nil {
 			bigFileInfo, err := newBigFileInfo(fileName, hash, c.PostForm(paramChunkCount))
 			if err != nil {
-				log.Println(err.Error())
+				logger.Error(err.Error())
 				c.JSON(http.StatusOK, response.Fail(err.Error()))
 				return
 			}
@@ -136,7 +136,7 @@ func BigFileUploadInit(c *gin.Context) {
 func BigFileUploadChunk(c *gin.Context) {
 	//check params
 	if err := bigFFUChunkCheck(c); err != nil {
-		log.Println(err.Error())
+		logger.Error(err.Error())
 		c.JSON(http.StatusOK, response.Fail(err.Error()))
 		return
 	}
@@ -147,33 +147,33 @@ func BigFileUploadChunk(c *gin.Context) {
 	chunkBinary, _ := c.FormFile(paramChunkBinary)
 	chunkHash, err := ulr.hash(chunkBinary)
 	if err != nil {
-		log.Println(err.Error())
+		logger.Error(err.Error())
 		c.JSON(http.StatusOK, response.Fail(err.Error()))
 		return
 	}
 	if fileHash := c.PostForm(paramChunkHash); fileHash != chunkHash {
-		log.Println(err.Error())
+		logger.Error(err.Error())
 		c.JSON(http.StatusOK, response.Fail(fileCorrupted))
 		return
 	}
 	//gain save path
 	savePath, err := util.PathAdaptive("/resource/temp")
 	if err != nil {
-		log.Println(err.Error())
+		logger.Error(err.Error())
 		c.JSON(http.StatusOK, response.Fail(err.Error()))
 		return
 	}
 	//save chunk file
 	size, err := ulr.saveFile(chunkBinary, savePath, chunkHash)
 	if err != nil {
-		log.Println(err.Error())
+		logger.Error(err.Error())
 		c.JSON(http.StatusOK, response.Fail(err.Error()))
 		return
 	}
 	//add or update chunk upload info
 	chunkInfo, err := newChunkInfo(chunkHash, c.PostForm(paramChunkIndex), c.PostForm(paramChunkStart), c.PostForm(paramChunkEnd))
 	if err != nil {
-		log.Println(err.Error())
+		logger.Error(err.Error())
 		c.JSON(http.StatusOK, response.Fail(err.Error()))
 		return
 	}
@@ -191,7 +191,7 @@ func BigFileUploadChunk(c *gin.Context) {
 func BigFileUploadMerge(c *gin.Context) {
 	//param check
 	if err := bigFFUMergeCheck(c); err != nil {
-		log.Println(err.Error())
+		logger.Error(err.Error())
 		c.JSON(http.StatusOK, response.Fail(err.Error()))
 		return
 	}
@@ -213,14 +213,14 @@ func BigFileUploadMerge(c *gin.Context) {
 	//gain save path TODO: from database
 	savePath, err := ulr.gainSavePath("persist")
 	if err != nil {
-		log.Println(err.Error())
+		logger.Error(err.Error())
 		c.JSON(http.StatusOK, response.Fail(err.Error()))
 		return
 	}
 	//get temp save path
 	tempPath, err := util.PathAdaptive("/resource/temp/")
 	if err != nil {
-		log.Println(err.Error())
+		logger.Error(err.Error())
 		c.JSON(http.StatusOK, response.Fail(err.Error()))
 		return
 	}

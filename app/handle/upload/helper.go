@@ -4,9 +4,9 @@ import (
 	"crypto/md5"
 	"encoding/hex"
 	"gfs/app/common"
+	"gfs/app/logger"
 	"gfs/app/util"
 	"io"
-	"log"
 	"mime/multipart"
 	"os"
 	"runtime"
@@ -42,7 +42,7 @@ func (u *uploadHelper) gainSavePath(persistFolder string) (string, error) {
 	if _, err := os.Stat(savePath); err != nil {
 		if os.IsNotExist(err) {
 			if err := os.MkdirAll(savePath, os.ModePerm); err != nil {
-				log.Println(err.Error())
+				logger.Error(err.Error())
 				return "", &common.GfsError{Message: "directory create failed"}
 			}
 		}
@@ -101,11 +101,11 @@ func (u *uploadHelper) mergeChunk(chunkSortArray *[]*ChunkInfo, path, resourceNa
 			if written, err := io.CopyBuffer(file, chunkFile, buf); err != nil {
 				chunkFile.Close()
 				if err := os.Remove(resource); err != nil {
-					log.Printf("delete temp main file:%s error", resource)
+					logger.Error("delete temp main file:%s error", resource)
 				}
 				return "", 0, &common.GfsError{Message: "copy temp file failed"}
 			} else {
-				chunkFile, _ := os.OpenFile(tempResource, os.O_RDONLY, 0600)
+				chunkFile.Seek(0, 0)
 				if _, err := io.CopyBuffer(hash, chunkFile, buf); err != nil {
 					chunkFile.Close()
 					return "", 0, &common.GfsError{Message: "copy temp file for hash failed"}
@@ -117,8 +117,8 @@ func (u *uploadHelper) mergeChunk(chunkSortArray *[]*ChunkInfo, path, resourceNa
 		chunkFile.Close()
 
 		if err := os.Remove(tempResource); err != nil {
-			log.Println(err.Error())
-			log.Printf("delete temp chunk file:%s error", resource)
+			logger.Error(err.Error())
+			logger.Error("delete temp chunk file:%s error", resource)
 		}
 	}
 

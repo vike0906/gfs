@@ -1,9 +1,9 @@
 package upload
 
 import (
+	"gfs/app/logger"
 	"gfs/app/util"
 	"github.com/patrickmn/go-cache"
-	"log"
 	"os"
 	"time"
 )
@@ -45,24 +45,24 @@ func init() {
 		var expireTime int64 = 24 * 60 * 60
 		for {
 			<-t.C
-			log.Println("clear temp cache file task start")
+			logger.Info("clear temp cache file task start")
 			for chunkHash, timestamp := range *c {
 				if interval := time.Now().Unix() - timestamp; interval >= expireTime {
 					path, err := util.PathAdaptive("/resource/temp/")
 					if err != nil {
-						log.Println("File routing failed")
+						logger.Error("File routing failed")
 					} else {
 						var resource = path + chunkHash
 
 						if _, err := os.Stat(resource); err != nil {
 							if os.IsNotExist(err) {
-								log.Println("Temporary cache file is not exist")
+								logger.Error("Temporary cache file is not exist")
 							} else {
-								log.Println("Resource addressing failed")
+								logger.Error("Resource addressing failed")
 							}
 						} else {
 							if err := os.Remove(resource); err != nil {
-								log.Println("Temporary cache file deletion failed")
+								logger.Error("Temporary cache file deletion failed")
 							} else {
 								delete(*c, chunkHash)
 							}

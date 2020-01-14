@@ -1,9 +1,14 @@
 package router
 
 import (
+	"fmt"
 	"gfs/app/common"
+	log "gfs/app/logger"
 	"github.com/gin-gonic/gin"
+	"io"
 	"net/http"
+	"os"
+	"time"
 )
 
 func cors() gin.HandlerFunc {
@@ -23,6 +28,27 @@ func cors() gin.HandlerFunc {
 		// handle request
 		c.Next()
 	}
+}
+
+func logger() gin.HandlerFunc {
+	c := gin.LoggerConfig{
+		Output:    io.MultiWriter(os.Stdout, log.GetLogWriter()),
+		SkipPaths: []string{"/vue"},
+		Formatter: func(params gin.LogFormatterParams) string {
+			return fmt.Sprintf("[GIN]%s - [%s] \"%s %s %s %d %s \"%s\" %s\"\n",
+				params.ClientIP,
+				params.TimeStamp.Format(time.RFC1123),
+				params.Method,
+				params.Path,
+				params.Request.Proto,
+				params.StatusCode,
+				params.Latency,
+				params.Request.UserAgent(),
+				params.ErrorMessage,
+			)
+		},
+	}
+	return gin.LoggerWithConfig(c)
 }
 
 func handleNotFound(c *gin.Context) {
