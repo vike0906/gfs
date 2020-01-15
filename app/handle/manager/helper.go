@@ -1,6 +1,7 @@
 package manager
 
 import (
+	"crypto/sha1"
 	"crypto/sha256"
 	"encoding/hex"
 	"gfs/app/common"
@@ -20,7 +21,18 @@ func passwordHash(psd, salt string) string {
 	return hex.EncodeToString(hash.Sum(nil))
 }
 
+func appSecretHash(appKey, salt string) string {
+	hash := sha1.New()
+	hash.Reset()
+	hash.Write([]byte(salt))
+	for i := 0; i < 10; i++ {
+		hash.Write([]byte(appKey))
+	}
+	return hex.EncodeToString(hash.Sum(nil))
+}
+
 func getUserVoByToken(c *gin.Context) *model.UserVo {
+
 	if authToken := c.Request.Header.Get("AuthToken"); authToken == "" {
 		c.JSON(http.StatusOK, common.Response{Code: 100, Message: IllegalRequest})
 		return nil

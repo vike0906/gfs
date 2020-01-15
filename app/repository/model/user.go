@@ -13,8 +13,12 @@ type User struct {
 	Role      uint8  `gorm:"default:0;not null"`
 	Status    uint8  `gorm:"default:0;not null"`
 	Token     string `gorm:"size:32"`
-	AccessKey string `gorm:"size:32"`
-	SecretKey string `gorm:"size:32"`
+	AppKey    string `gorm:"size:32"`
+	AppSecret string `gorm:"size:40"`
+}
+
+func NewUser(name, loginName, password, salt, appKey, appSecret string, role, status uint8) *User {
+	return &User{Name: name, LoginName: loginName, Password: password, Salt: salt, Role: role, Status: status, AppKey: appKey, AppSecret: appSecret}
 }
 
 type UserVo struct {
