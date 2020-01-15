@@ -29,32 +29,32 @@ var (
 // Debug ...
 func Debug(v ...interface{}) {
 	setPrefix(debug)
-	Println(logInstance, v)
+	println(logInstance, v)
 
 }
 
 // Info ...
 func Info(v ...interface{}) {
 	setPrefix(info)
-	Println(logInstance, v)
+	println(logInstance, v)
 }
 
 // Warn ...
 func Warn(v ...interface{}) {
 	setPrefix(warning)
-	Println(logInstance, v)
+	println(logInstance, v)
 }
 
 // Error Warn
 func Error(v ...interface{}) {
 	setPrefix(error)
-	Println(logInstance, v)
+	println(logInstance, v)
 }
 
 // Fatal ...
 func Fatal(v ...interface{}) {
 	setPrefix(fatal)
-	Fatalln(logInstance, v)
+	fatalln(logInstance, v)
 }
 
 func setPrefix(level LEVEL) {
@@ -63,7 +63,7 @@ func setPrefix(level LEVEL) {
 }
 
 // Println ..
-func Println(l *log.Logger, v ...interface{}) {
+func println(l *log.Logger, v ...interface{}) {
 	if l != nil {
 		l.Output(3, fmt.Sprintln(v...))
 	}
@@ -71,7 +71,7 @@ func Println(l *log.Logger, v ...interface{}) {
 }
 
 // Fatalln is equivalent to l.Println() followed by a call to os.Exit(1).
-func Fatalln(l *log.Logger, v ...interface{}) {
+func fatalln(l *log.Logger, v ...interface{}) {
 	if l != nil {
 		l.Output(3, fmt.Sprintln(v...))
 		os.Exit(1)

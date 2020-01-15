@@ -41,3 +41,11 @@ func TestUUID(t *testing.T) {
 func TestRandomString(t *testing.T) {
 	fmt.Println(RandomString(10))
 }
+
+func TestSnakeString(t *testing.T) {
+	fmt.Println(SnakeString("AsdSdsScAAA"))
+}
+
+func TestCamelString(t *testing.T) {
+	fmt.Println(CamelString("asd_sds_sc_a_a_a"))
+}

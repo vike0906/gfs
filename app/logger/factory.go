@@ -16,8 +16,8 @@ var (
 	logPath   string
 )
 
+//out to Stdout and log file
 func GetLogWriter() *io.Writer {
-	//out to Stdout and log file
 	writer := io.MultiWriter(os.Stdout, logWriter)
 	return &writer
 }

@@ -2,6 +2,7 @@ package router
 
 import (
 	"gfs/app/handle/download"
+	"gfs/app/handle/manager"
 	"gfs/app/handle/upload"
 	"gfs/config"
 	"github.com/gin-gonic/gin"
@@ -54,23 +55,22 @@ func api() http.Handler {
 	router.NoRoute(handleNotFound)
 	router.NoMethod(handleNotFound)
 
-	//文件服务
+	//file server
 	router.GET("/download/:key", download.Download)
 	router.POST("/upload", upload.SmallFileUpload)
 	router.POST("/init", upload.BigFileUploadInit)
 	router.POST("/chunk", upload.BigFileUploadChunk)
 	router.POST("/merge", upload.BigFileUploadMerge)
 
-	//系统管理
+	//manager api
 	managerServer := router.Group("/manager")
 	{
-		managerServer.POST("/login")
-		managerServer.POST("/logout")
-		managerServer.POST("/change-psd")
+		managerServer.POST("/login", manager.Login)
+		managerServer.POST("/change-psd", manager.ChangePassword)
+		managerServer.POST("/logout", manager.Logout)
 
-		managerServer.GET("/users")
 		user := managerServer.Group("/user")
-		user.POST("/gain")
+		user.GET("/gain", manager.UserGain)
 		user.POST("/add")
 		user.POST("/edit")
 		user.POST("/delete")
@@ -89,8 +89,8 @@ func web() http.Handler {
 	router.MaxMultipartMemory = 1 << 20
 	gin.SetMode(gin.ReleaseMode)
 	router.Use(gin.Recovery())
-	router.StaticFile("/index", "vue/index.html")
 	router.Static("/static", "./vue/static")
+	router.StaticFile("/index", "vue/index.html")
 	router.NoRoute(func(c *gin.Context) {
 		c.Request.URL.Path = "/index"
 		router.HandleContext(c)

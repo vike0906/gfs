@@ -101,7 +101,7 @@ func (u *uploadHelper) mergeChunk(chunkSortArray *[]*ChunkInfo, path, resourceNa
 			if written, err := io.CopyBuffer(file, chunkFile, buf); err != nil {
 				chunkFile.Close()
 				if err := os.Remove(resource); err != nil {
-					logger.Error("delete temp main file:%s error", resource)
+					logger.Error("delete temp test file:%s error", resource)
 				}
 				return "", 0, &common.GfsError{Message: "copy temp file failed"}
 			} else {

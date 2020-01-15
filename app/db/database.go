@@ -8,27 +8,32 @@ import (
 	_ "github.com/jinzhu/gorm/dialects/mysql"
 )
 
-var DataBase *gorm.DB
+var dataBase *gorm.DB
+
+func DataBase() *gorm.DB {
+	db := dataBase
+	return db
+}
 
 func Init(m *config.Mysql) error {
 
 	var err error
 
-	DataBase, err = gorm.Open("mysql", connectUrl(m))
+	dataBase, err = gorm.Open("mysql", connectUrl(m))
 	if err != nil {
 		return err
 	}
 
-	DataBase.DB().SetMaxOpenConns(100)
-	DataBase.DB().SetMaxIdleConns(10)
-	DataBase.SingularTable(true)
+	dataBase.DB().SetMaxOpenConns(100)
+	dataBase.DB().SetMaxIdleConns(10)
+	dataBase.SingularTable(true)
 	//DataBase.LogMode(true)
 
 	gorm.DefaultTableNameHandler = func(db *gorm.DB, defaultTableName string) string {
 		return "gfs_" + defaultTableName
 	}
 
-	err = repository.CheckAndCreates(DataBase)
+	err = repository.CheckAndCreates(dataBase)
 	if err != nil {
 		return err
 	}

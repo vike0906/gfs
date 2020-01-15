@@ -32,7 +32,7 @@ func (u *User) GainVo() *UserVo {
 	userVo.LoginName = u.LoginName
 	userVo.Role = u.Role
 	userVo.Status = u.Status
-	userVo.Token = u.Token
+	//userVo.Token = u.Token
 	userVo.ID = u.ID
 	userVo.CreatedAt = u.CreatedAt
 	userVo.UpdatedAt = u.UpdatedAt
