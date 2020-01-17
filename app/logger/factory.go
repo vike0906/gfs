@@ -34,7 +34,7 @@ func createAndUpdateLogFile() {
 }
 
 //begin when app start
-//and then in the 00:00:00 every day
+//and then run at the 00:00:00 every day
 func createLogFileTask() {
 	createAndUpdateLogFile()
 	go func() {

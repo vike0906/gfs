@@ -27,7 +27,8 @@ func Init(m *config.Mysql) error {
 	dataBase.DB().SetMaxOpenConns(100)
 	dataBase.DB().SetMaxIdleConns(10)
 	dataBase.SingularTable(true)
-	//DataBase.LogMode(true)
+	dataBase.LogMode(true)
+	//dataBase.SetLogger(logger.GetLogger("ORM"))
 
 	gorm.DefaultTableNameHandler = func(db *gorm.DB, defaultTableName string) string {
 		return "gfs_" + defaultTableName

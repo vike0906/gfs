@@ -8,4 +8,5 @@ var (
 
 const (
 	resourceNotFount = "resource not found"
+	resourceIsBreak  = "resource is breakdown"
 )

@@ -8,7 +8,7 @@ import (
 //check file is exist
 func queryFileByHash(hash string) (*model.File, error) {
 	var file model.File
-	if err := db.DataBase().Where("hash_md5 =?", hash).First(&file).Error; err != nil {
+	if err := db.DataBase().Unscoped().Where("hash_md5 =?", hash).First(&file).Error; err != nil {
 		return nil, err
 	}
 	return &file, nil

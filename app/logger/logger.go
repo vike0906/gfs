@@ -77,3 +77,9 @@ func fatalln(l *log.Logger, v ...interface{}) {
 		os.Exit(1)
 	}
 }
+
+func GetLogger(prefix string) *log.Logger {
+	logPrefix = fmt.Sprintf("[%s] ", prefix)
+	logInstance.SetPrefix(logPrefix)
+	return logInstance
+}

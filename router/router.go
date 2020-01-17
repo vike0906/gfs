@@ -72,12 +72,11 @@ func api() http.Handler {
 		user := managerServer.Group("/user")
 		user.GET("/gain", manager.UserGain)
 		user.POST("/save", manager.UserSave)
-		user.POST("/delete", manager.UserDelete)
+		user.DELETE("/delete", manager.UserDelete)
 
 		file := managerServer.Group("resource")
-		file.POST("/gain")
-		file.POST("/save")
-		file.POST("/delete")
+		file.GET("/gain", manager.ResourceGain)
+		file.DELETE("/delete", manager.ResourceDelete)
 	}
 	return router
 }

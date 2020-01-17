@@ -28,8 +28,9 @@ func Login(c *gin.Context) {
 		return
 	}
 
-	//query user info by loginName
 	var user model.User
+
+	//query user info by loginName
 	if err := db.DataBase().Where("login_name = ?", form.LoginName).First(&user).Error; err != nil {
 		c.JSON(http.StatusOK, response.Fail(loginNameOrPsdError))
 		return
@@ -39,6 +40,12 @@ func Login(c *gin.Context) {
 	p := passwordHash(form.Password, user.Salt)
 	if p != user.Password {
 		c.JSON(http.StatusOK, response.Fail(loginNameOrPsdError))
+		return
+	}
+
+	//is disabled
+	if user.Status != 1 {
+		c.JSON(http.StatusOK, response.Fail(accountIsDisable))
 		return
 	}
 
@@ -87,7 +94,6 @@ func ChangePassword(c *gin.Context) {
 			}
 		}
 	}
-	//获取用户信息
 }
 
 func Logout(c *gin.Context) {
