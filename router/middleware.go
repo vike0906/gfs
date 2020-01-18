@@ -3,6 +3,7 @@ package router
 import (
 	"fmt"
 	"gfs/app/common"
+	"gfs/app/component"
 	log "gfs/app/logger"
 	"github.com/gin-gonic/gin"
 	"net/http"
@@ -47,6 +48,27 @@ func logger() gin.HandlerFunc {
 		},
 	}
 	return gin.LoggerWithConfig(c)
+}
+
+func auth() gin.HandlerFunc {
+	return func(c *gin.Context) {
+		if "/manager/login" == c.Request.RequestURI {
+			c.Next()
+			return
+		}
+		authToken := c.Request.Header.Get("AuthToken")
+		if authToken == "" {
+			c.AbortWithStatusJSON(http.StatusOK, common.Response{Code: 100, Message: "Illegal request"})
+			return
+		}
+		userVo := component.GetAuthToken(authToken)
+		if userVo == nil {
+			c.AbortWithStatusJSON(http.StatusOK, common.Response{Code: 100, Message: "AuthToken is Expired"})
+			return
+		}
+		component.PutAuthToken(authToken, userVo)
+		c.Next()
+	}
 }
 
 func handleNotFound(c *gin.Context) {

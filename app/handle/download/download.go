@@ -8,6 +8,9 @@ import (
 	"github.com/gin-gonic/gin"
 	"net/http"
 	"os"
+	"strconv"
+	"strings"
+	"time"
 )
 
 func Download(c *gin.Context) {
@@ -26,9 +29,23 @@ func Download(c *gin.Context) {
 	} else {
 		//token
 		token := c.Query("token")
-		//TODO check token
-		//TODO manager web server's token
-		component.GetAccessToken(token)
+		ex := c.Query("e")
+		if re, err := tokenCheck(token, key, ex); re != true {
+			if err != nil {
+				c.JSON(http.StatusOK, response.Fail(err.Error()))
+			} else {
+				c.JSON(http.StatusOK, response.Fail(tokenError))
+			}
+			return
+		}
+		if exInt64, err := strconv.ParseInt(ex, 10, 64); err != nil {
+			c.JSON(http.StatusOK, response.Fail("expired timestamp is error"))
+			return
+		} else if exInt64 < time.Now().Unix() {
+			c.JSON(http.StatusOK, response.Fail(exError))
+			return
+		}
+		resourceTran(fileInfo.FileName, fileInfo.ResourcePath, fileInfo.ResourceName, c)
 	}
 }
 
@@ -44,7 +61,23 @@ func resourceTran(fileName, resourcePath, ResourceName string, c *gin.Context) {
 	c.File(resource)
 }
 
-func tokenCheck(token string) {
-	//component.GetAccessToken(token)
+func tokenCheck(token, key, ex string) (bool, error) {
+
 	component.GetAuthToken(token)
+
+	tokens := strings.Split(token, ":")
+	if len(tokens) != 2 {
+		return false, nil
+	}
+	user, err := queryUserByAppKey(tokens[0])
+	if err != nil {
+		return false, err
+	}
+	//TODO serverUrl from database
+	var serverUrl = "http://localhost/9090/" + key + "?e=" + ex
+	sign := util.CreateSign([]byte(serverUrl), []byte(user.AppSecret))
+	if sign == token {
+		return true, nil
+	}
+	return false, nil
 }

@@ -1,6 +1,8 @@
 package manager
 
 import (
+	"encoding/base64"
+	"encoding/json"
 	"gfs/app/common"
 	"gfs/app/db"
 	"gfs/app/logger"
@@ -9,6 +11,7 @@ import (
 	"github.com/gin-gonic/gin"
 	"net/http"
 	"strconv"
+	"time"
 )
 
 func ResourceGain(c *gin.Context) {
@@ -80,4 +83,57 @@ func ResourceDelete(c *gin.Context) {
 		}
 		c.JSON(http.StatusOK, response.SuccessWithMessage("Delete File Success"))
 	}
+}
+
+func AccreditUpload(c *gin.Context) {
+
+	var userVo *model.UserVo
+	var permissionType string
+
+	if userVo = getUserVoByToken(c); userVo == nil {
+		return
+	}
+	if permissionType = c.Query("permissionType"); permissionType == "" || (permissionType != public && permissionType != private) {
+		c.JSON(http.StatusOK, response.Fail(paramError))
+		return
+	}
+	var user model.User
+	if err := db.DataBase().Where("id = ?", userVo.ID).First(&user).Error; err != nil {
+		c.JSON(http.StatusOK, response.Fail(userInfoError))
+		return
+	}
+	//permissionType deadline
+	paramMap := make(map[string]string, 2)
+	paramMap["deadline"] = strconv.FormatInt(time.Now().Add(30*time.Minute).Unix(), 10)
+	paramMap["permissionType"] = permissionType
+	s, _ := json.Marshal(paramMap)
+
+	message := base64.RawURLEncoding.EncodeToString(s)
+	sign := util.CreateSign([]byte(message), []byte(user.AppSecret))
+	token := user.AppKey + ":" + sign + ":" + message
+
+	c.JSON(http.StatusOK, response.SuccessWithContent(token))
+}
+
+func AccreditDownload(c *gin.Context) {
+	var userVo *model.UserVo
+	var url string
+
+	if userVo = getUserVoByToken(c); userVo == nil {
+		return
+	}
+	if url = c.Query("permissionType"); url == "" {
+		c.JSON(http.StatusOK, response.Fail(paramError))
+		return
+	}
+	var user model.User
+	if err := db.DataBase().Where("id = ?", userVo.ID).First(&user).Error; err != nil {
+		c.JSON(http.StatusOK, response.Fail(userInfoError))
+		return
+	}
+	url = url + "?e=" + strconv.FormatInt(time.Now().Add(30*time.Minute).Unix(), 10)
+	sign := util.CreateSign([]byte(url), []byte(user.AppSecret))
+	token := user.AppKey + ":" + sign
+
+	c.JSON(http.StatusOK, response.SuccessWithContent(token))
 }

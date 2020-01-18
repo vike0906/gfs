@@ -18,6 +18,11 @@ const (
 	initPassword = "123456"
 )
 
+const (
+	public  = "public"
+	private = "private"
+)
+
 var (
 	response = common.ResponseInstance()
 )

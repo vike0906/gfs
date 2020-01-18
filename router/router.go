@@ -64,6 +64,7 @@ func api() http.Handler {
 
 	//manager api
 	managerServer := router.Group("/manager")
+	managerServer.Use(auth())
 	{
 		managerServer.POST("/login", manager.Login)
 		managerServer.POST("/change-psd", manager.ChangePassword)
@@ -77,6 +78,9 @@ func api() http.Handler {
 		file := managerServer.Group("resource")
 		file.GET("/gain", manager.ResourceGain)
 		file.DELETE("/delete", manager.ResourceDelete)
+		file.GET("/accredit/upload", manager.AccreditUpload)
+		file.GET("/accredit/download", manager.AccreditDownload)
+
 	}
 	return router
 }

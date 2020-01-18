@@ -9,4 +9,6 @@ var (
 const (
 	resourceNotFount = "resource not found"
 	resourceIsBreak  = "resource is breakdown"
+	tokenError       = "token error"
+	exError          = "token is expired"
 )
