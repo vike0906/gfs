@@ -23,9 +23,6 @@ func SmallFileUpload(c *gin.Context) {
 		c.JSON(http.StatusOK, response.Fail(err.Error()))
 		c.Abort()
 	}
-	logger.Error(fileCorrupted)
-	logger.Info(fileCorrupted)
-	logger.Debug(fileCorrupted)
 	//TODO check uploadToken
 
 	//hash and validation
